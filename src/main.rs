@@ -5,6 +5,7 @@ type Point = Vector3<f32>;
 const WHITE: Color = Color::new(255, 255, 255, 255);
 const RED: Color = Color::new(255, 0, 0, 255);
 const GREEN: Color = Color::new(0, 255, 0, 255);
+const CYAN: Color = Color::new(0, 255, 255, 255);
 const BLUE: Color = Color::new(0, 0, 255, 255);
 
 
@@ -15,10 +16,6 @@ fn tetra(_origin: Vec3) -> (Vec<Point>, Vec<u16>, Vec<Color>) {
     let d = 1.0 / 3_f32;
 
     let corners: Vec<Point> = vec![
-        // vec3(1.0, 1.0, 1.0),
-        // vec3(1.0, -1.0, -1.0),
-        // vec3(-1.0, 1.0, -1.0),
-        // vec3(-1.0, -1.0, 1.0),
         vec3(0.0, 0.0, 1.0),
         vec3(a, 0.0, -d),
         vec3(-b, c, -d),
@@ -27,10 +24,11 @@ fn tetra(_origin: Vec3) -> (Vec<Point>, Vec<u16>, Vec<Color>) {
 
     //(corners, vec![0, 1, 2])
     //(corners, vec![0, 3, 1])
+    //let normals = vec![];
     (
         corners,
         vec![0, 1, 2, 0, 3, 1, 0, 2, 3, 1, 2, 3],
-        vec![RED, GREEN, BLUE, WHITE],
+        vec![WHITE, WHITE, WHITE, WHITE],
     )
 }
 
@@ -102,36 +100,40 @@ pub fn main() {
         vec3(0.0, 0.0, 5.0),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
-        degrees(45.0),
+        degrees(90.0),
         0.1,
         10.0,
     );
 
-    let mut control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 1.0, 1000.0);
+    let mut control = OrbitControl::new(vec3(0.0, 0.0, 0.0), 0.1, 100.0);
 
     let (mut positions, mut indices, mut colors) = tetra(vec3(0.0, 0.0, 0.0));
-    for _ in 0..8{
+    for _ in 0..6{
     subdivide(&mut positions, &mut indices, &mut colors);
     }
 
-    let cpu_mesh = CpuMesh {
+    let mut cpu_mesh = CpuMesh {
         positions: Positions::F32(positions),
         colors: Some(colors),
         indices: Indices::U16(indices),
         ..Default::default()
     };
-
+    cpu_mesh.compute_normals();
     let ambient = AmbientLight::new(&context, 0.4, Color::WHITE);
-    let directional1 = DirectionalLight::new(&context, 2.0, Color::WHITE, &vec3(-1.0, -1.0, -1.0));
-    let directional2 = DirectionalLight::new(&context, 2.0, Color::WHITE, &vec3(1.0, 1.0, 1.0));
+    let directional1 = DirectionalLight::new(&context, 2.0, Color::RED, &vec3(-1.0, -1.0, -1.0));
+    let directional2 = DirectionalLight::new(&context, 2.0, Color::BLUE, &vec3(1.0, 1.0, 1.0));
 
 
     // Construct a model, with a default color material, thereby transferring the mesh data to the GPU
-    let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), ColorMaterial::default());
+    let mut model = Gm::new(Mesh::new(&context, &cpu_mesh), PhysicalMaterial::default());
+
 
     // Start the main render loop
-    window.render_loop(move |frame_input: FrameInput| // Begin a new frame with an updated frame input
+    window.render_loop(move |mut frame_input: FrameInput| // Begin a new frame with an updated frame input
     {
+
+        control.handle_events(&mut camera, &mut frame_input.events);
+
         // Ensure the viewport matches the current window viewport which changes if the window is resized
         camera.set_viewport(frame_input.viewport);
 
