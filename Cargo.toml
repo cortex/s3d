@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-three-d = "0.14.0"
+three-d = "0.15.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 log = "0.4"
